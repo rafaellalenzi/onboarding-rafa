@@ -75,7 +75,7 @@ class CollaborationController
     {
         $input = json_decode($request->getBody()->getContents(), true);
 
-        $command = RegisterExperimentCommand::fromHttpRequest($input);
+        $command = RegisterExperimentCommand::fromHttpRequest($input["experiment"]);
 
         try {
             $experiment = $this->registerExperimentHandler->handle($command);

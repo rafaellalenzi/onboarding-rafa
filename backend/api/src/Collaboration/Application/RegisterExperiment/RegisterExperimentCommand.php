@@ -24,7 +24,7 @@ final class RegisterExperimentCommand
     {
         $command = new self(
             $input['acronym'],
-            $input['full_name'],
+            $input['fullName'],
             $input['address']
         );
 

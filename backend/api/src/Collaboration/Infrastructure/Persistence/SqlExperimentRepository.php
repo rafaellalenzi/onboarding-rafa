@@ -49,7 +49,7 @@ class SqlExperimentRepository implements
         }, $statement->fetchAllAssociative());
     }
 
-    public function findDetailsById(int $id): ?ExperimentDetails
+    public function findExperimentDetailsById(int $id): ?ExperimentDetails
     {
         $query = "SELECT
                 E.ID AS ID,

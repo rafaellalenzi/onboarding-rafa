@@ -7,5 +7,5 @@ namespace Glance\Onboarding\Collaboration\Application\GetExperimentDetails;
 interface ExperimentViewRepositoryInterface
 {
     public function findAllExperiments(): array;
-    public function findDetailsById(int $id): ?Experiment;
+    public function findExperimentDetailsById(int $id): ?Experiment;
 }

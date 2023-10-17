@@ -10,7 +10,7 @@ use Glance\Onboarding\Collaboration\Application\GetMemberDetails\Member as Membe
 use Glance\Onboarding\Collaboration\Domain\Member;
 use Glance\Onboarding\Collaboration\Domain\MemberReadRepositoryInterface;
 use Glance\Onboarding\Collaboration\Domain\MemberWriteRepositoryInterface;
-
+use Glance\Onboarding\Collaboration\Domain\IntegerId;
 class SqlMemberRepository implements 
 MemberViewRepositoryInterface, 
 MemberReadRepositoryInterface,
@@ -67,7 +67,7 @@ MemberWriteRepositoryInterface
         ";
         $statement = $this->connection->prepare($query);
         $payload = [
-            'id' => $id
+            'id' => $id 
         ];
         $statement->execute($payload);
         $rows = $statement->fetchAllAssociative();
@@ -98,7 +98,7 @@ MemberWriteRepositoryInterface
         return $rows ? MemberDetails::fromPersistence($rows[0]) : null;
     }
 
-    public function findById(int $id): Member
+    public function findById(IntegerId $id): Member
     {
         $query = "SELECT
                 M.ID AS ID,
@@ -112,7 +112,7 @@ MemberWriteRepositoryInterface
         ";
         $statement = $this->connection->prepare($query);
         $payload = [
-            'id' => $id
+            'id' => $id ->toInteger()
         ];
         $statement->execute($payload);
         $rows = $statement->fetchAllAssociative();
@@ -146,8 +146,37 @@ MemberWriteRepositoryInterface
             'lastName' => $member->lastName(),
             'email' => $member->email(),
             'age' => $member->age(),
-            'experimentId' => $member->experimentId()
+            'experimentId' => $member->experimentId()->toInteger()
         ];
         $statement->execute($payload);
     }
+    public function deleteMember(int $id): void
+    {
+        $query = "DELETE FROM MEMBER WHERE ID = :id";
+        $statement = $this->connection->prepare($query);
+        $statement->execute(["id" => $id]);
+    }
+    public function updateMember(Member $member): void
+    {
+        $query = "UPDATE MEMBER
+            SET
+                FIRST_NAME = :firstName,
+                LAST_NAME = :lastName,
+                EMAIL = :email,
+                AGE = :age,
+                EXPERIMENT_ID = :experimentId
+            WHERE ID = :id
+        ";
+        $statement = $this->connection->prepare($query);
+        $payload = [
+            "id" => $member->id()->toInteger(),
+            "firstName" => $member->firstName(),
+            "lastName" => $member->lastName(),
+            "email" => $member->email(),
+            "age" => $member->age(),
+            "experimentId" => $member->experimentId()->toInteger()
+        ];
+        $statement->execute($payload);
+    }
+
 }

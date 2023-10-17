@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Glance\Onboarding\Collaboration\Domain;
 
 use Glance\Onboarding\Collaboration\Domain\Exception\MemberException;
+use Glance\Onboarding\Collaboration\Domain\IntegerId;
 
 class Member
 {
@@ -21,7 +22,7 @@ class Member
         string $lastName,
         string $email,
         int $age,
-        int $experimentId
+        IntegerId $experimentId
     ) {
         $this->id = $id;
         $this->firstName = $firstName;
@@ -42,7 +43,7 @@ class Member
             $data['LAST_NAME'],
             $data['EMAIL'],
             (int) $data['AGE'],
-            (int) $data['EXPERIMENT_ID']
+            IntegerId::fromString($data['EXPERIMENT_ID'])
         );
     }
 
@@ -52,7 +53,7 @@ class Member
         string $lastName,
         string $email,
         int $age,
-        int $experimentId
+        IntegerId $experimentId
     ): self {
         return new self(
             $id,
@@ -63,6 +64,21 @@ class Member
             $experimentId
         );
     }
+    public function update(
+        string $firstName,
+        string $lastName,
+        string $email,
+        int $age,
+        IntegerId $experimentId
+    ):void
+    {
+        $this->firstName = $firstName;
+        $this->lastName = $lastName;
+        $this->email = $email;
+        $this->age = $age;
+        $this->experimentId = $experimentId;
+    }
+
 
     public function id(): IntegerId
     {
@@ -88,7 +104,7 @@ class Member
     {
         return $this->age;
     }
-    public function experimentId(): int
+    public function experimentId(): IntegerId
     {
         return $this->experimentId;
     }
@@ -112,7 +128,7 @@ class Member
         $this->age = $age;
     }
 
-    public function updateExperimentId(int $experimentId): void
+    public function updateExperimentId(IntegerId $experimentId): void
     {
         $this->experimentId = $experimentId;
     }

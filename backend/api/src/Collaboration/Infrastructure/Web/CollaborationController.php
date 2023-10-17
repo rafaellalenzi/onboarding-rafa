@@ -11,6 +11,13 @@ use Glance\Onboarding\Collaboration\Application\RegisterExperiment\RegisterExper
 use Glance\Onboarding\Collaboration\Application\RegisterExperiment\RegisterExperimentHandler;
 use Glance\Onboarding\Collaboration\Application\RegisterMember\RegisterMemberCommand;
 use Glance\Onboarding\Collaboration\Application\RegisterMember\RegisterMemberHandler;
+use Glance\Onboarding\Collaboration\Domain\ExperimentWriteRepositoryInterface;
+use Glance\Onboarding\Collaboration\Domain\MemberWriteRepositoryInterface;
+use Glance\Onboarding\Collaboration\Application\UpdateExperiment\UpdateExperimentCommand;
+use Glance\Onboarding\Collaboration\Application\UpdateExperiment\UpdateExperimentHandler;
+use Glance\Onboarding\Collaboration\Application\UpdateMember\UpdateMemberCommand;
+use Glance\Onboarding\Collaboration\Application\UpdateMember\UpdateMemberHandler;
+use Glance\Onboarding\Collaboration\Domain\IntegerId;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpNotFoundException;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -22,17 +29,31 @@ class CollaborationController
     private $registerExperimentHandler;
     private $memberDetailsRepository;
     private $registerMemberHandler;
+    private $experimentWriteRepository;
+    private $memberWriteRepository;
+    private $updateExperimentHandler;
+    private $updateMemberHandler;
+
 
     public function __construct(
         ExperimentViewRepositoryInterface $experimentDetailsRepository,
         RegisterExperimentHandler $registerExperimentHandler,
         MemberViewRepositoryInterface $memberDetailsRepository,
-        RegisterMemberHandler $registerMemberHandler
+        RegisterMemberHandler $registerMemberHandler,
+        ExperimentWriteRepositoryInterface $experimentWriteRepository,
+        MemberWriteRepositoryInterface $memberWriteRepository,
+        UpdateExperimentHandler $updateExperimentHandler,
+        UpdateMemberHandler $updateMemberHandler
+
     ) {
         $this->experimentDetailsRepository = $experimentDetailsRepository;
         $this->registerExperimentHandler = $registerExperimentHandler;
         $this->memberDetailsRepository = $memberDetailsRepository;
         $this->registerMemberHandler = $registerMemberHandler;
+        $this->experimentWriteRepository = $experimentWriteRepository;
+        $this->memberWriteRepository = $memberWriteRepository;
+        $this->updateExperimentHandler = $updateExperimentHandler;
+        $this->updateMemberHandler = $updateMemberHandler;
     }
 
     public function findMembers(Request $request, Response $response): Response
@@ -62,7 +83,29 @@ class CollaborationController
 
     public function updateMember(Request $request, Response $response, array $args): Response
     {
+        $id = (int) $args['id'];
+        $id = IntegerId::fromInteger($id);
+        $input = json_decode($request->getBody()->getContents(), true);
+
+        $command = UpdateMemberCommand::fromHttpRequest($input["member"],$id);
+
+        try {
+            $member = $this->updateMemberHandler->handle($command,$id);
+        } catch (Exception $e) {
+            throw new HttpBadRequestException($request, $e->getMessage());
+        }
+
+        $response->getBody()->write(
+            json_encode([
+                "member" => $this->memberDetailsRepository->findMemberDetailsById(
+                    $member->id()->toInteger()
+                )
+            ])
+        );
+
+        return $response->withAddedHeader("Content-Type", "application/json");
     }
+
 
     public function registerMember(Request $request, Response $response): Response
     {
@@ -89,6 +132,16 @@ class CollaborationController
 
     public function deleteMember(Request $request, Response $response, array $args): Response
     {
+        $id = (int) $args['id'];
+
+        try {
+            $this->memberWriteRepository->deleteMember($id);
+        } catch (Exception $e) {
+            throw new HttpBadRequestException($request, $e->getMessage());
+        }
+
+        return $response->withStatus(204);
+
     }
 
     public function findExperiments(Request $request, Response $response): Response
@@ -141,6 +194,28 @@ class CollaborationController
 
     public function updateExperiment(Request $request, Response $response, array $args): Response
     {
+        $id = (int) $args['id'];
+        $id = IntegerId::fromInteger($id);
+        $input = json_decode($request->getBody()->getContents(), true);
+
+        $command = UpdateExperimentCommand::fromHttpRequest($input["experiment"],$id);
+
+        try {
+            $experiment = $this->updateExperimentHandler->handle($command,$id);
+        } catch (Exception $e) {
+            throw new HttpBadRequestException($request, $e->getMessage());
+        }
+
+        $response->getBody()->write(
+            json_encode([
+                "experiment" => $this->experimentDetailsRepository->findExperimentDetailsById(
+                    $experiment->id()->toInteger()
+                )
+            ])
+        );
+
+        return $response->withAddedHeader("Content-Type", "application/json");
+
     }
 
     public function findMembersByExperimentId(Request $request, Response $response, array $args): Response
@@ -158,5 +233,20 @@ class CollaborationController
 
     public function deleteExperiment(Request $request, Response $response, array $args): Response
     {
+        $id = (int) $args['id'];
+
+        if ($this->memberDetailsRepository->findMemberDetailsByExpId($id)) {
+            throw new HttpBadRequestException($request, "Experiment has members");
+        }
+
+        try {
+            $this->experimentWriteRepository->deleteExperiment($id);
+        } catch (Exception $e) {
+            throw new HttpBadRequestException($request, $e->getMessage());
+        }
+
+        return $response->withStatus(204);
+
     }
 }
+

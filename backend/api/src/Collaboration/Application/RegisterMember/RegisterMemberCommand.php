@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 namespace Glance\Onboarding\Collaboration\Application\RegisterMember;
+use Glance\Onboarding\Collaboration\Domain\IntegerId;
 
 final class RegisterMemberCommand
 {
@@ -18,7 +19,7 @@ final class RegisterMemberCommand
         string $lastName,
         string $email,
         int $age,
-        int $experimentId
+        IntegerId $experimentId
     ) {
         $this->firstName = $firstName;
         $this->lastName = $lastName;
@@ -34,7 +35,7 @@ final class RegisterMemberCommand
             $input['lastName'],
             $input['email'],
             (int) $input['age'],
-            (int) $input['experimentId']
+            IntegerId::fromInteger($input['experimentId'])
         );
         return $command;
     }
@@ -57,7 +58,7 @@ final class RegisterMemberCommand
     {
         return $this->age;
     }
-    public function experimentId(): int
+    public function experimentId(): IntegerId
     {
         return $this->experimentId;
     }
